@@ -323,10 +323,60 @@ function draw() {
   // ✅ 제일 먼저 화면 전체 클리어
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  if (!dropping && !gameOver) {
+    const previewRadius = FRUIT_STATS[currentFruitType]?.radius || RADIUS;
+    const fruitY = 50;
+    const fruitBottom = fruitY + previewRadius;
+    const fruitCenterX = waitingFruitX;
+  
+    let minY = canvas.height;
+    let touching = false;
+  
+    for (const fruit of fruits) {
+      const dx = Math.abs(fruit.position.x - fruitCenterX);
+      const dy = fruit.position.y - fruitY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+  
+      // ✅ 닿았는지 여부 - 중심 간 거리 + 여유
+      if (distance <= fruit.radius + 4) {
+        touching = true;
+        break;
+      }
+  
+      // ✅ 판정 여유: 과일이 충분히 근접한 경우에만 대상 포함
+      const X_TOLERANCE = fruit.radius * 1; // ★ 현실적인 허용 오차
+      if (dx < X_TOLERANCE && fruit.position.y > fruitBottom) {
+        minY = Math.min(minY, fruit.position.y);
+      }
+    }
+  
+    if (!touching) {
+      ctx.setLineDash([10, 5]);
+      ctx.beginPath();
+      ctx.moveTo(fruitCenterX, fruitBottom);
+      ctx.lineTo(fruitCenterX, minY);
+      ctx.strokeStyle = '#00ff00';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
   // ✅ 게임오버 경고 가이드라인
   const dangerLineY = 30;
   const lineNear = fruits.some(fruit => (fruit.position.y - fruit.radius) < dangerLineY + 20);
-
   ctx.beginPath();
   ctx.moveTo(0, dangerLineY);
   ctx.lineTo(canvas.width, dangerLineY);
@@ -337,12 +387,20 @@ function draw() {
   ctx.setLineDash([]); // 원래대로 복원
 
   // ✅ 게임 오버 텍스트
-  if (gameOver) {
-    ctx.fillStyle = "#000";
-    ctx.font = "48px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-  }
+// ✅ 오른쪽 상단 미리보기 ... 그 아래에 추가
+const nextImg = FRUIT_IMAGES[nextFruitType];
+if (nextImg && nextImg.complete) {
+  ctx.drawImage(nextImg, canvas.width - 60 - 20, 60 - 20, 40, 40);
+} else {
+  ctx.fillStyle = FRUIT_COLORS[nextFruitType] || "#999";
+  ctx.beginPath();
+  ctx.arc(canvas.width - 60, 60, 20, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+
+
+
 
   // ✅ 과일 그리기
   for (const fruit of fruits) {
@@ -360,7 +418,7 @@ function draw() {
     if (img && img.complete) {
       ctx.save();
       ctx.translate(fruit.position.x, fruit.position.y);
-      ctx.rotate(fruit.visualAngle); // ✅ 회전 각도 반영!
+      ctx.rotate(fruit.visualAngle);
       ctx.drawImage(img, -radius, -radius, radius * 2, radius * 2);
       ctx.restore();
     } else {
@@ -391,16 +449,32 @@ function draw() {
   ctx.font = "16px Arial";
   ctx.fillText("Next:", canvas.width - 100, 30);
 
-  const nextImg = FRUIT_IMAGES[nextFruitType];
+  
   if (nextImg && nextImg.complete) {
-    ctx.drawImage(nextImg, canvas.width - 60 - 20, 60 - 20, 40, 40); // 40x40 고정
+    ctx.drawImage(nextImg, canvas.width - 60 - 20, 60 - 20, 40, 40);
   } else {
     ctx.fillStyle = FRUIT_COLORS[nextFruitType] || "#999";
     ctx.beginPath();
     ctx.arc(canvas.width - 60, 60, 20, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  // ✅ 🟥 맨 마지막에 게임 오버 텍스트
+if (gameOver) {
+  // 반투명 어두운 배경
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillRect(0, canvas.height / 2 - 60, canvas.width, 120);
+
+  // 눈에 잘 띄는 흰색 텍스트
+  ctx.fillStyle = "#fff";
+  ctx.font = "48px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 + 15);
 }
+
+
+}
+
 
 
 
